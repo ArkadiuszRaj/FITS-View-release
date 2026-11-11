@@ -1,10 +1,39 @@
-# FITS View (fits-viewer)
+<p align="center">
+  <img src="fits-viewer.svg" width="112" alt="FITS View">
+</p>
 
-FITS viewer for the files of a station (and any other FITS): 16-bit images and cubes
-scaled to the 8 bits of the screen, the planes of a cube played, the header keywords and
-the binary tables listed. React + TypeScript in the browser, a small Node.js server
-(fastify) on localhost, packaged as a `.deb`, an AppImage and a Windows installer and
-zip, each with a bundled Node.js, the same way as `cad-viewer` in CAD-View.
+<h1 align="center">FITS View</h1>
+
+<p align="center">FITS images, cubes, headers and tables: the files of a station, and any other FITS</p>
+
+FITS View shows 16-bit images and cubes scaled to the screen, plays the planes of a cube,
+lists the header keywords and the binary tables, plots their columns, measures stars along a
+line and lays the ROIs of a pass on the sensor. It runs on your computer only: a window of its
+own (Edge, Chrome or Chromium), nothing leaves the machine.
+
+## Installing
+
+The packages are on the [latest release](https://github.com/ArkadiuszRaj/FITS-View-release/releases/latest); each carries everything it needs (Node.js
+included):
+
+| system | file | how |
+|--------|------|-----|
+| Windows 10/11 | `fits-viewer-<version>-win64-setup.exe` | run it: installed for you, no administrator rights; Start menu, "Open with" of `.fits`, `.fit`, `.fts`. Not signed: SmartScreen asks once, **More info → Run anyway** |
+| Windows, portable | `fits-viewer-<version>-win64.zip` | unzip anywhere, run `fits-viewer.exe` |
+| Debian, Ubuntu | `fits-viewer_<version>_amd64.deb` | `sudo apt install ./fits-viewer_<version>_amd64.deb`; the menu entry, `fits-viewer` on the command line |
+| any Linux | `fits-viewer-<version>-x86_64.AppImage` | `chmod +x` and run it |
+| macOS (Apple silicon) | `fits-viewer-<version>-macos-arm64.tar.gz` | `tar xzf …`, then `./install.sh` in its folder (`--user`: without the password) |
+
+The SHA-256 of every file is in the notes of the release. [Start View](https://github.com/ArkadiuszRaj/View-Launcher-release),
+the start page of the viewers, installs it from its tile as well.
+
+## Updates
+
+FITS View looks for a newer release by itself and offers it at the bottom right: **Upgrade**
+fetches it, checks it and installs it, **Start the new version** opens the same files in it.
+**Later** and **Skip this version** keep it as it is.
+
+## Running it
 
 ```sh
 fits-viewer image.fits              # opens the browser on the file
@@ -14,16 +43,12 @@ fits-viewer                         # opens the browser; files are opened from t
 fits-viewer a.fits.gz --no-open     # only the server: open the printed address yourself
 ```
 
-The server binds to 127.0.0.1 on a free port and stops 15 s after the last page is
-closed (with `--no-open`: on Ctrl+C), so the menu entry, `fits-viewer.exe` and "Open
-with" on `.fits` files need no terminal. The menu entry (Linux) and `fits-viewer.exe`
-(Windows) use `--app`; the window has a browser profile of its own in
-`~/.cache/fits-viewer/app-profile` (Windows: `%LOCALAPPDATA%\fits-viewer\app-profile`), one for all the windows.
+From the menu entry, `fits-viewer.exe` or "Open with" it opens in a window of its own; it
+stops 15 s after its last window is closed.
 
 ## Using it
 
-The window has the same zones as the other viewers of the family (GED View's
-`docs/belka.md`):
+The window has the same zones as the other viewers of the family:
 
 - the **toolbar**, one line that never changes with the file: **File ▾** (**Open…**, **Save
   PNG…**), the view as icons (**Fit** (F), **1:1** (1), zoom in (+), zoom out (−); the key
@@ -87,8 +112,7 @@ The window has the same zones as the other viewers of the family (GED View's
   sample per pixel, interpolated between the pixels, the mean over a width of 1–9 pixels
   across; **csv** saves them). It follows the plane shown (and works on the track).
   - A drag from a star: the star is measured once, in 2-D. Its centre is found as the
-    station firmware finds it (`src/shared/starfit.ts`, from ON-Firmware's
-    `roi-filter.hpp` and `shape-fitting.cpp` `fit_point`: the centroid of the pixels above
+    station firmware finds it (the centroid of the pixels above
     half maximum around the peak, then a circular Gaussian with a background fitted to
     the pixels by Levenberg–Marquardt, saturated ones left out); its FWHM is of that
     Gaussian held at the centre, its amplitude, width and background fitted within 12 px
@@ -140,57 +164,7 @@ previews. Also 32-bit integers and 32/64-bit floats (uncompressed). Not read:
 compressed floating-point images, ASCII tables, random groups, images of 1 or more
 than 3 dimensions: their headers are still listed.
 
-## How it works
-
-| step | where |
-|------|-------|
-| file → HDUs | `src/shared/fits.ts`: header cards, images (big endian to typed arrays), binary tables, tile-compressed images; in a Web Worker (`src/client/parse.worker.ts`), gzip through `DecompressionStream` |
-| RICE_1 | `src/shared/rice.ts`: the decoder of cfitsio (`ricecomp.c`) for 1, 2 and 4 bytes per pixel |
-| plane → screen | `src/shared/scale.ts`: statistics (a sorted sample for the percentiles, a histogram for the panel), zscale, the stretch as a 4096-step table, colour maps, RGBA |
-| the pass | `src/shared/track.ts`: the places of the ROIs from the table, the planes laid on the sensor |
-| plots | `src/client/Plot.tsx`: sparklines and plots of the columns, on a canvas |
-| compare, profile | `src/client/Compare.tsx`, `src/client/Profile.tsx` on `src/client/Chart.tsx` (lines on a canvas); `src/shared/profile.ts`: the samples along a line, the half-maximum width, a Levenberg–Marquardt Gaussian |
-| screen | `src/client/ImageView.tsx`: the plane on an offscreen canvas, drawn with the view's transform |
-| words | `src/client/i18n.ts`: the strings of the page in English and Polish, as in GED View |
-
-### What is in `release`
-
-`<version>` comes from `git describe`: `1.0` built at the tag `v1.0`, `1.0+4.gf3f7e03` four
-commits after it (`.dirty` with uncommitted changes); without a tag, `package.json` plus the
-commit. Every package carries its own Node.js, so none of them needs Node.js installed.
-
-| file | for | how it is used |
-|------|-----|----------------|
-| `fits-viewer_<version>_amd64.deb` | Debian, Ubuntu and the like (x86-64): installed for all users; a newer `.deb` installed the same way upgrades it | `sudo apt install ./fits-viewer_<version>_amd64.deb`; then `fits-viewer` on the command line, the menu entry, "Open with" on FITS files |
-| `fits-viewer-<version>-x86_64.AppImage` | any Linux (x86-64) without installing: one file to copy, e.g. to a station or a laptop without root | `chmod +x` and run it, with files or a folder as arguments |
-| `fits-viewer-<version>-win64-setup.exe` | Windows 10/11 x64: installed per user, no administrator rights | run it; Start menu entry, optional desktop shortcut, "Open with" on `.fits`, `.fit`, `.fts`; uninstalled from Windows' settings |
-| `fits-viewer-<version>-win64.zip` | Windows, portable: nothing installed (a USB stick, a locked-down PC) | unzip anywhere, run `fits-viewer.exe` in the unzipped folder (or `bin\fits-viewer.cmd`, with a console) |
-| `*latest*` (e.g. `fits-viewer_latest_amd64.deb`) | a fixed name for scripts, links and downloads | a relative symbolic link to the package of that kind built last |
-
-The details of each:
-
-- `.deb`: `sudo apt install ./fits-viewer_<version>_amd64.deb` installs into
-  `/opt/fits-viewer`, links `fits-viewer` into `/usr/bin` and registers the menu entry
-  for FITS files. Needs glibc 2.28 (the bundled Node.js 22) and `xdg-utils`;
-  Chromium, Chrome or Edge recommended for the app window.
-- AppImage: `chmod +x fits-viewer-*.AppImage; ./fits-viewer-*.AppImage [--app] image.fits`.
-  Without FUSE: `--appimage-extract-and-run` as the first argument or
-  `APPIMAGE_EXTRACT_AND_RUN=1`.
-- Windows 10/11 x64 (`packaging/windows`): `fits-viewer.exe` is a small launcher
-  (C, MinGW-w64, static: only the DLLs of Windows) that runs the bundled `node.exe`
-  with `--app` in an Edge window, without a console, the log in
-  `%LOCALAPPDATA%\fits-viewer\fits-viewer.log`; `bin\fits-viewer.cmd` is the same with a
-  console. The installer (NSIS) installs per user without administrator rights into
-  `%LOCALAPPDATA%\Programs\fits-viewer`, adds the Start menu entry, optionally a desktop
-  shortcut and FITS View in "Open with" of `.fits`, `.fit` and `.fts` files (the default
-  program of these files is not changed); the zip is the portable version. See
-  `packaging/windows/README-Windows.txt` (shipped in both).
-
-The macOS package is built here, on Linux, from the Node.js of nodejs.org for macOS (the
-modules are pure JS: nothing of Apple is needed); its `install.sh` puts it in `/opt/fits-viewer`
-(or `~/.local/opt/fits-viewer` with `--user`) and `fits-viewer` on PATH; nothing is signed by Apple:
-packaging/macos/README-macOS.txt.
-
 ## Licence
 
 Copyright © 2026 Arkadiusz Raj (hijax_pl). MIT (`LICENSE`).
+
