@@ -31,7 +31,7 @@ the start page of the viewers, installs it from its tile as well.
 
 FITS View looks for a newer release by itself and offers it at the bottom right: **Upgrade**
 fetches it, checks it and installs it, **Start the new version** opens the same files in it.
-**Later** and **Skip this version** keep it as it is.
+**Later** and **Skip this version** keep it as it is. The server fetches it, not the browser (it is not in the browser's downloads). On Windows the installer can replace the files only once the application is closed, so right after the fetch it closes (its other windows too, asked if open), runs `setup.exe /S` and opens the new version; its steps in `%LOCALAPPDATA%\fits-viewer\fits-viewer-upgrade.log`.
 
 ## Running it
 
