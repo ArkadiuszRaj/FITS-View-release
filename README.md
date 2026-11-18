@@ -48,6 +48,9 @@ stops 15 s after its last window is closed.
 
 ## Using it
 
+The manual, with pictures, is in the application in the language of the page: the **Help**
+tab, F1, or docs/manual.md (po polsku).
+
 The window has the same zones as the other viewers of the family:
 
 - the **toolbar**, one line that never changes with the file: **File ▾** (**Open…**, **Save
